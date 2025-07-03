@@ -9,6 +9,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Carregar configuração do Appwrite
+$appwrite = require 'config.php';
+
 // Log for debugging
 error_log("==================== NEW REQUEST ====================");
 error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
@@ -19,35 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $response = ['success' => false, 'message' => 'Unknown error'];
 
-// Create directories if they don't exist
-if (!file_exists('videos')) {
-    mkdir('videos', 0777, true);
-}
-if (!file_exists('imagens')) {
-    mkdir('imagens', 0777, true);
-}
-    
-    // Load existing videos
-    $videos = [];
-    if (file_exists('videos.json')) {
-    $jsonContent = file_get_contents('videos.json');
-    error_log("Raw JSON content: " . substr($jsonContent, 0, 200) . "...");
-    
-    $videos = json_decode($jsonContent, true);
-    if ($videos === null) {
-        error_log("JSON decode error: " . json_last_error_msg());
-        $videos = [];
-    } else if (!is_array($videos)) {
-        error_log("JSON decoded but not an array, type: " . gettype($videos));
-        $videos = [];
-    }
-    error_log("Loaded " . count($videos) . " videos from videos.json");
-    
-    // Debug: Print all video IDs
-    $videoIds = array_map(function($video) {
-        return $video['id'] ?? 'unknown';
-    }, $videos);
-    error_log("Existing video IDs: " . implode(', ', $videoIds));
+// Handle OPTIONS request (for CORS preflight)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
 }
 
 // Handle DELETE request
@@ -60,31 +38,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
         $id = $input['id'];
         error_log("Deleting video with ID: " . $id);
         
-        // Count before deletion
-        $countBefore = count($videos);
-        error_log("Videos before deletion: " . $countBefore);
-        
-        // Filter out the video to delete
-        $videosFiltered = array_filter($videos, function($video) use ($id) {
-            return $video['id'] !== $id;
-        });
-        
-        // Re-index array to ensure it's sequential
-        $videosFiltered = array_values($videosFiltered);
-        
-        // Count after deletion
-        $countAfter = count($videosFiltered);
-        error_log("Videos after deletion: " . $countAfter);
-        
-        if ($countBefore === $countAfter) {
-            error_log("No video found with ID: " . $id);
-            $response = ['success' => false, 'message' => 'No video found with that ID'];
-        } else if (file_put_contents('videos.json', json_encode($videosFiltered, JSON_PRETTY_PRINT))) {
-            error_log("Video deleted successfully");
-            $response = ['success' => true, 'message' => 'Video deleted successfully'];
-        } else {
-            error_log("Failed to delete video: Error writing to file");
-            $response = ['success' => false, 'message' => 'Failed to delete video: Error writing to file'];
+        try {
+            // Configurar cURL para excluir documento no Appwrite
+            $curl = curl_init();
+            
+            $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents/' . $id;
+            
+            $headers = [
+                'Content-Type: application/json',
+                'X-Appwrite-Project: ' . $appwrite['projectId'],
+                'X-Appwrite-Key: ' . $appwrite['apiKey']
+            ];
+            
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => 'DELETE',
+                CURLOPT_HTTPHEADER => $headers
+            ]);
+            
+            $curlResponse = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            
+            curl_close($curl);
+            
+            if ($error) {
+                throw new Exception('cURL Error: ' . $error);
+            }
+            
+            if ($httpCode >= 200 && $httpCode < 300) {
+                error_log("Video deleted successfully");
+                $response = ['success' => true, 'message' => 'Video deleted successfully'];
+            } else {
+                $errorData = json_decode($curlResponse, true);
+                $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+                throw new Exception('API Error: ' . $errorMessage . ' (Code: ' . $httpCode . ')');
+            }
+        } catch (Exception $e) {
+            error_log("Failed to delete video: " . $e->getMessage());
+            $response = ['success' => false, 'message' => 'Failed to delete video: ' . $e->getMessage()];
         }
     } else {
         error_log("No video ID specified for deletion");
@@ -92,12 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     }
     
     echo json_encode($response);
-    exit;
-}
-
-// Handle OPTIONS request (for CORS preflight)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
     exit;
 }
 
@@ -110,292 +97,400 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $videoId = $_POST['id'];
             error_log("Deleting video with ID: " . $videoId);
             
-            // Count before deletion
-            $countBefore = count($videos);
-            
-            // Filter out the video to delete
-            $videosFiltered = array_filter($videos, function($video) use ($videoId) {
-                return $video['id'] !== $videoId;
-            });
-            
-            // Re-index array to ensure it's sequential
-            $videosFiltered = array_values($videosFiltered);
-            
-            // Count after deletion
-            $countAfter = count($videosFiltered);
-            
-            if ($countBefore === $countAfter) {
-                $response = ['success' => false, 'message' => 'No video found with that ID'];
-            } else if (file_put_contents('videos.json', json_encode($videosFiltered, JSON_PRETTY_PRINT))) {
-                $response = ['success' => true, 'message' => 'Video deleted successfully'];
-            } else {
-                $response = ['success' => false, 'message' => 'Failed to delete video'];
+            try {
+                // Configurar cURL para excluir documento no Appwrite
+                $curl = curl_init();
+                
+                $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents/' . $videoId;
+                
+                $headers = [
+                    'Content-Type: application/json',
+                    'X-Appwrite-Project: ' . $appwrite['projectId'],
+                    'X-Appwrite-Key: ' . $appwrite['apiKey']
+                ];
+                
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CUSTOMREQUEST => 'DELETE',
+                    CURLOPT_HTTPHEADER => $headers
+                ]);
+                
+                $curlResponse = curl_exec($curl);
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                $error = curl_error($curl);
+                
+                curl_close($curl);
+                
+                if ($error) {
+                    throw new Exception('cURL Error: ' . $error);
+                }
+                
+                if ($httpCode >= 200 && $httpCode < 300) {
+                    $response = ['success' => true, 'message' => 'Video deleted successfully'];
+                } else {
+                    $errorData = json_decode($curlResponse, true);
+                    $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+                    throw new Exception('API Error: ' . $errorMessage . ' (Code: ' . $httpCode . ')');
+                }
+            } catch (Exception $e) {
+                $response = ['success' => false, 'message' => 'Failed to delete video: ' . $e->getMessage()];
             }
             
             echo json_encode($response);
-        exit;
-    }
-    
+            exit;
+        }
+        
         // Handle video upload/edit
         error_log("Processing video upload/edit");
-        
-        // Get the form field names from the request
-        error_log("Available POST fields: " . implode(", ", array_keys($_POST)));
         
         // Fix for edit vs new video - check for video-id field
         if (isset($_POST['video-id']) && !empty($_POST['video-id'])) {
             $id = trim($_POST['video-id']);
             error_log("Editing existing video with ID: '$id'");
             
-            // Check if the ID actually exists in the videos array
-            $videoExists = false;
-            foreach ($videos as $video) {
-                if (isset($video['id'])) {
-                    // Convert both to strings for comparison
-                    $videoId = (string)$video['id'];
-                    $searchId = (string)$id;
-                    
-                    if ($videoId === $searchId) {
-                        $videoExists = true;
-                        error_log("Found match: Video ID '$videoId' matches search ID '$searchId'");
-                        break;
-                    }
-                }
-            }
+            // Primeiro, buscar o documento existente
+            $curl = curl_init();
             
-            if (!$videoExists) {
-                error_log("Warning: Video ID '$id' not found in videos.json");
-                error_log("All video IDs in database: " . implode(', ', array_column($videos, 'id')));
-                error_log("Type comparison check:");
-                foreach ($videos as $index => $video) {
-                    if (isset($video['id'])) {
-                        $videoId = $video['id'];
-                        error_log("Video $index - ID: '$videoId' (type: " . gettype($videoId) . ") vs '$id' (type: " . gettype($id) . ")");
-                        error_log("String comparison: " . ((string)$videoId === (string)$id ? 'true' : 'false'));
-                    }
-                }
-            }
-        } else {
-            $id = uniqid();
-            error_log("Creating new video with generated ID: $id");
-        }
-        
-        // Get existing video data if editing
-        $existingVideo = [];
-        $existingIndex = -1;
-        foreach ($videos as $index => $video) {
-            if (isset($video['id'])) {
-                // Convert both to strings for comparison
-                $videoId = (string)$video['id'];
-                $searchId = (string)$id;
-                
-                if ($videoId === $searchId) {
-                    $existingVideo = $video;
-                    $existingIndex = $index;
-                    error_log("Found existing video with ID: '$id' at index $index");
-                    break;
-                }
-            }
-        }
-        
-        // Different handling for new vs existing videos
-        if ($existingIndex >= 0) {
-            // EDITING EXISTING VIDEO
-            // Start with existing data and only update what was submitted
-            $videoData = $existingVideo;
-            error_log("Editing existing video - keeping original data as base");
+            $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents/' . $id;
             
-            // Only update fields that were submitted
-            if (isset($_POST['title']) && !empty($_POST['title'])) {
-                $videoData['title'] = $_POST['title'];
-                error_log("Updated title: " . $_POST['title']);
-            }
-            
-            if (isset($_POST['price']) && $_POST['price'] !== '') {
-                $videoData['price'] = floatval($_POST['price']);
-                error_log("Updated price: " . $_POST['price']);
-            }
-            
-            if (isset($_POST['description']) && !empty($_POST['description'])) {
-                $videoData['description'] = $_POST['description'];
-                error_log("Updated description");
-            }
-            
-            if (isset($_POST['duration']) && !empty($_POST['duration'])) {
-                $videoData['duration'] = $_POST['duration'];
-                error_log("Updated duration: " . $_POST['duration']);
-            }
-            
-            if (isset($_POST['status'])) {
-                $videoData['status'] = $_POST['status'];
-                error_log("Updated status: " . $_POST['status']);
-            }
-            
-            if (isset($_POST['video-link']) && !empty($_POST['video-link'])) {
-                $videoData['videoLink'] = $_POST['video-link'];
-                error_log("Updated video link: " . $_POST['video-link']);
-            }
-            
-            // Handle thumbnail upload only if a file was actually uploaded
-            if (isset($_FILES['thumbnail-upload']) && $_FILES['thumbnail-upload']['error'] === UPLOAD_ERR_OK && !empty($_FILES['thumbnail-upload']['name'])) {
-                $imageFile = $_FILES['thumbnail-upload'];
-                $imageExt = pathinfo($imageFile['name'], PATHINFO_EXTENSION);
-                $imagePath = 'imagens/' . $id . '_thumb.' . $imageExt;
-                
-                error_log("Uploading new thumbnail to: $imagePath");
-                
-                if (!move_uploaded_file($imageFile['tmp_name'], $imagePath)) {
-                    throw new Exception('Failed to upload thumbnail');
-                }
-                
-                $videoData['image'] = $imagePath;
-                error_log("Updated image path: $imagePath");
-            } else if (isset($_POST['existing-image']) && !empty($_POST['existing-image'])) {
-                // Keep existing image from form
-                $videoData['image'] = $_POST['existing-image'];
-                error_log("Kept existing image: " . $_POST['existing-image']);
-            }
-            // else - keep the existing image from database (already in $videoData)
-            
-            // Handle video upload only if a file was actually uploaded
-            if (isset($_FILES['video-upload']) && $_FILES['video-upload']['error'] === UPLOAD_ERR_OK && !empty($_FILES['video-upload']['name'])) {
-                $videoFile = $_FILES['video-upload'];
-                $videoExt = pathinfo($videoFile['name'], PATHINFO_EXTENSION);
-                $videoPath = 'videos/' . $id . '_preview.' . $videoExt;
-                
-                error_log("Uploading new video to: $videoPath");
-                
-                if (!move_uploaded_file($videoFile['tmp_name'], $videoPath)) {
-                    throw new Exception('Failed to upload video');
-                }
-                
-                $videoData['videoUrl'] = $videoPath;
-                error_log("Updated video path: $videoPath");
-            } else if (isset($_POST['existing-video']) && !empty($_POST['existing-video'])) {
-                // Keep existing video from form
-                $videoData['videoUrl'] = $_POST['existing-video'];
-                error_log("Kept existing video: " . $_POST['existing-video']);
-            }
-            // else - keep the existing video from database (already in $videoData)
-            
-            // Always update the updated_at timestamp
-            $videoData['updated_at'] = date('Y-m-d H:i:s');
-            
-        } else {
-            // CREATING NEW VIDEO
-            // For new videos, all required fields must be present
-            $title = $_POST['title'] ?? '';
-            $price = $_POST['price'] ?? 0;
-            $description = $_POST['description'] ?? '';
-            $duration = $_POST['duration'] ?? '00:00';
-            $status = $_POST['status'] ?? 'Active';
-            $videoLink = $_POST['video-link'] ?? '';
-            
-            error_log("Creating new video - ID: $id, Title: $title, Price: $price");
-            
-            // Check required fields individually
-            $missingFields = [];
-            if (empty($title)) $missingFields[] = 'title';
-            if (empty($price)) $missingFields[] = 'price';
-            if (empty($description)) $missingFields[] = 'description';
-            if (empty($videoLink)) $missingFields[] = 'video-link';
-            
-            // Return detailed error if any required fields are missing
-            if (!empty($missingFields)) {
-                $message = 'Required fields are missing: ' . implode(', ', $missingFields);
-                error_log($message);
-                throw new Exception($message);
-            }
-            
-            // Handle thumbnail upload
-            $imagePath = '';
-            if (isset($_FILES['thumbnail-upload']) && $_FILES['thumbnail-upload']['error'] === UPLOAD_ERR_OK && !empty($_FILES['thumbnail-upload']['name'])) {
-                $imageFile = $_FILES['thumbnail-upload'];
-                $imageExt = pathinfo($imageFile['name'], PATHINFO_EXTENSION);
-                $imagePath = 'imagens/' . $id . '_thumb.' . $imageExt;
-                
-                error_log("Uploading thumbnail to: $imagePath");
-                
-                if (!move_uploaded_file($imageFile['tmp_name'], $imagePath)) {
-                    throw new Exception('Failed to upload thumbnail');
-                }
-            } else if (isset($_POST['existing-image']) && !empty($_POST['existing-image'])) {
-                // Use existing image from form
-                $imagePath = $_POST['existing-image'];
-                error_log("Using existing image: $imagePath");
-            }
-            
-            // Handle video upload
-            $videoPath = '';
-            if (isset($_FILES['video-upload']) && $_FILES['video-upload']['error'] === UPLOAD_ERR_OK && !empty($_FILES['video-upload']['name'])) {
-                $videoFile = $_FILES['video-upload'];
-                $videoExt = pathinfo($videoFile['name'], PATHINFO_EXTENSION);
-                $videoPath = 'videos/' . $id . '_preview.' . $videoExt;
-                
-                error_log("Uploading video to: $videoPath");
-                
-                if (!move_uploaded_file($videoFile['tmp_name'], $videoPath)) {
-                    throw new Exception('Failed to upload video');
-                }
-            } else if (isset($_POST['existing-video']) && !empty($_POST['existing-video'])) {
-                // Use existing video from form
-                $videoPath = $_POST['existing-video'];
-                error_log("Using existing video: $videoPath");
-            }
-            
-            // Prepare video data for new video
-            $videoData = [
-            'id' => $id,
-            'title' => $title,
-                'price' => floatval($price),
-            'description' => $description,
-            'duration' => $duration,
-            'status' => $status,
-                'videoLink' => $videoLink,
-                'image' => $imagePath,
-                'videoUrl' => $videoPath,
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
+            $headers = [
+                'Content-Type: application/json',
+                'X-Appwrite-Project: ' . $appwrite['projectId'],
+                'X-Appwrite-Key: ' . $appwrite['apiKey']
             ];
-        }
-        
-        error_log("Final video data prepared: " . json_encode($videoData));
-        
-        // Update or add video - direct index update for existing videos
-        if ($existingIndex >= 0) {
-            $videos[$existingIndex] = $videoData;
-            error_log("Updated existing video at index $existingIndex with ID: $id");
+            
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => $headers
+            ]);
+            
+            $curlResponse = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            
+            curl_close($curl);
+            
+            if ($error) {
+                throw new Exception('cURL Error while fetching video: ' . $error);
+            }
+            
+            if ($httpCode === 404) {
+                // Documento não encontrado, tratar como novo
+                $id = 'unique()'; // Appwrite vai gerar um ID
+                $isNewVideo = true;
+                $existingVideo = null;
+                error_log("Video ID not found, creating new video");
+            } elseif ($httpCode >= 200 && $httpCode < 300) {
+                // Documento encontrado
+                $existingVideo = json_decode($curlResponse, true);
+                $isNewVideo = false;
+                error_log("Found existing video document");
+            } else {
+                $errorData = json_decode($curlResponse, true);
+                $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+                throw new Exception('API Error while fetching video: ' . $errorMessage . ' (Code: ' . $httpCode . ')');
+            }
         } else {
-            $videos[] = $videoData;
-            error_log("Added new video with ID: $id");
+            $id = 'unique()'; // Appwrite vai gerar um ID
+            $isNewVideo = true;
+            $existingVideo = null;
+            error_log("Creating new video with generated ID");
         }
         
-        // Sort videos by created_at
-        usort($videos, function($a, $b) {
-            return strtotime($b['created_at'] ?? 0) - strtotime($a['created_at'] ?? 0);
-        });
+        // Preparar dados para salvar
+        $videoData = [];
         
-        // Re-index array to ensure it's sequential
-        $videos = array_values($videos);
-        
-        // Debug: Print all video IDs after update
-        $videoIds = array_map(function($video) {
-            return $video['id'] ?? 'unknown';
-        }, $videos);
-        error_log("Video IDs after update: " . implode(', ', $videoIds));
-        
-        // Save updated video list
-        error_log("Saving videos.json with " . count($videos) . " videos");
-    if (file_put_contents('videos.json', json_encode($videos, JSON_PRETTY_PRINT))) {
-            $response = ['success' => true, 'message' => 'Video saved successfully'];
-    } else {
-            throw new Exception('Failed to save video data');
+        if ($existingVideo) {
+            // Se for atualização, começar com os dados existentes
+            $videoData = $existingVideo;
         }
+        
+        // Atualizar campos do formulário
+        if (isset($_POST['title']) && !empty($_POST['title'])) {
+            $videoData['title'] = $_POST['title'];
+            error_log("Title: " . $_POST['title']);
+        } else if ($isNewVideo) {
+            $videoData['title'] = 'Untitled Video';
+        }
+        
+        if (isset($_POST['price'])) {
+            $videoData['price'] = floatval($_POST['price']);
+            error_log("Price: " . $_POST['price']);
+        } else if ($isNewVideo) {
+            $videoData['price'] = 0.0;
+        }
+        
+        if (isset($_POST['description'])) {
+            $videoData['description'] = $_POST['description'];
+            error_log("Description added");
+        } else if ($isNewVideo) {
+            $videoData['description'] = '';
+        }
+        
+        if (isset($_POST['duration'])) {
+            $videoData['duration'] = $_POST['duration'];
+            error_log("Duration: " . $_POST['duration']);
+        } else if ($isNewVideo) {
+            $videoData['duration'] = '00:00';
+        }
+        
+        if (isset($_POST['status'])) {
+            $videoData['is_active'] = ($_POST['status'] === 'active');
+            error_log("Status: " . $_POST['status']);
+        } else if ($isNewVideo) {
+            $videoData['is_active'] = true;
+        }
+        
+        if (isset($_POST['video-link'])) {
+            $videoData['product_link'] = $_POST['video-link'];
+            error_log("Video link: " . $_POST['video-link']);
+        } else if ($isNewVideo) {
+            $videoData['product_link'] = '';
+        }
+        
+        if (isset($_POST['views'])) {
+            $videoData['views'] = intval($_POST['views']);
+            error_log("Views: " . $_POST['views']);
+        } else if ($isNewVideo) {
+            $videoData['views'] = rand(1000, 10000);
+        }
+        
+        // Processar upload de thumbnail
+        if (isset($_FILES['thumbnail-upload']) && $_FILES['thumbnail-upload']['error'] === UPLOAD_ERR_OK) {
+            error_log("Processing thumbnail upload");
+            
+            $file = $_FILES['thumbnail-upload'];
+            $fileTmpPath = $file['tmp_name'];
+            $fileName = $file['name'];
+            $fileSize = $file['size'];
+            
+            // Gerar ID único para o arquivo
+            $fileId = uniqid();
+            
+            // Configurar cURL para upload para o Appwrite
+            $curl = curl_init();
+            
+            $url = $appwrite['endpoint'] . '/storage/buckets/' . $appwrite['thumbnailBucketId'] . '/files';
+            
+            // Criar os limites da requisição multipart
+            $boundary = uniqid();
+            $delimiter = '-------------' . $boundary;
+            
+            $postData = '';
+            
+            // ID do arquivo (opcional)
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="fileId"' . "\r\n\r\n";
+            $postData .= $fileId . "\r\n";
+            
+            // Permissões - permitir leitura para qualquer pessoa
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="permissions[]"' . "\r\n\r\n";
+            $postData .= 'read("any")' . "\r\n";
+            
+            // Arquivo
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="file"; filename="' . $fileName . '"' . "\r\n";
+            $postData .= 'Content-Type: ' . mime_content_type($fileTmpPath) . "\r\n\r\n";
+            $postData .= file_get_contents($fileTmpPath) . "\r\n";
+            $postData .= "--" . $delimiter . "--\r\n";
+            
+            $headers = [
+                'Content-Type: multipart/form-data; boundary=' . $delimiter,
+                'Content-Length: ' . strlen($postData),
+                'X-Appwrite-Project: ' . $appwrite['projectId'],
+                'X-Appwrite-Key: ' . $appwrite['apiKey']
+            ];
+            
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $postData,
+                CURLOPT_HTTPHEADER => $headers
+            ]);
+            
+            $thumbnailResponse = curl_exec($curl);
+            $thumbnailHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $thumbnailError = curl_error($curl);
+            
+            curl_close($curl);
+            
+            if ($thumbnailError) {
+                throw new Exception('cURL Error during thumbnail upload: ' . $thumbnailError);
+            }
+            
+            if ($thumbnailHttpCode >= 200 && $thumbnailHttpCode < 300) {
+                $thumbnailData = json_decode($thumbnailResponse, true);
+                
+                // Atualizar ID da thumbnail no documento do vídeo
+                $videoData['thumbnail_id'] = $thumbnailData['$id'];
+                error_log("Thumbnail uploaded successfully with ID: " . $thumbnailData['$id']);
+            } else {
+                $errorData = json_decode($thumbnailResponse, true);
+                $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+                throw new Exception('API Error during thumbnail upload: ' . $errorMessage . ' (Code: ' . $thumbnailHttpCode . ')');
+            }
+        }
+        
+        // Processar upload de vídeo
+        if (isset($_FILES['video-upload']) && $_FILES['video-upload']['error'] === UPLOAD_ERR_OK) {
+            error_log("Processing video file upload");
+            
+            $file = $_FILES['video-upload'];
+            $fileTmpPath = $file['tmp_name'];
+            $fileName = $file['name'];
+            $fileSize = $file['size'];
+            
+            // Gerar ID único para o arquivo
+            $fileId = uniqid();
+            
+            // Configurar cURL para upload para o Appwrite
+            $curl = curl_init();
+            
+            $url = $appwrite['endpoint'] . '/storage/buckets/' . $appwrite['videoBucketId'] . '/files';
+            
+            // Criar os limites da requisição multipart
+            $boundary = uniqid();
+            $delimiter = '-------------' . $boundary;
+            
+            $postData = '';
+            
+            // ID do arquivo (opcional)
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="fileId"' . "\r\n\r\n";
+            $postData .= $fileId . "\r\n";
+            
+            // Permissões - permitir leitura para qualquer pessoa
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="permissions[]"' . "\r\n\r\n";
+            $postData .= 'read("any")' . "\r\n";
+            
+            // Arquivo
+            $postData .= "--" . $delimiter . "\r\n";
+            $postData .= 'Content-Disposition: form-data; name="file"; filename="' . $fileName . '"' . "\r\n";
+            $postData .= 'Content-Type: ' . mime_content_type($fileTmpPath) . "\r\n\r\n";
+            $postData .= file_get_contents($fileTmpPath) . "\r\n";
+            $postData .= "--" . $delimiter . "--\r\n";
+            
+            $headers = [
+                'Content-Type: multipart/form-data; boundary=' . $delimiter,
+                'Content-Length: ' . strlen($postData),
+                'X-Appwrite-Project: ' . $appwrite['projectId'],
+                'X-Appwrite-Key: ' . $appwrite['apiKey']
+            ];
+            
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $postData,
+                CURLOPT_HTTPHEADER => $headers
+            ]);
+            
+            $videoFileResponse = curl_exec($curl);
+            $videoFileHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $videoFileError = curl_error($curl);
+            
+            curl_close($curl);
+            
+            if ($videoFileError) {
+                throw new Exception('cURL Error during video upload: ' . $videoFileError);
+            }
+            
+            if ($videoFileHttpCode >= 200 && $videoFileHttpCode < 300) {
+                $videoFileData = json_decode($videoFileResponse, true);
+                
+                // Atualizar ID do vídeo no documento
+                $videoData['video_id'] = $videoFileData['$id'];
+                error_log("Video file uploaded successfully with ID: " . $videoFileData['$id']);
+            } else {
+                $errorData = json_decode($videoFileResponse, true);
+                $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+                throw new Exception('API Error during video upload: ' . $errorMessage . ' (Code: ' . $videoFileHttpCode . ')');
+            }
+        }
+        
+        // Adicionar data de criação para novos vídeos
+        if ($isNewVideo) {
+            $videoData['created_at'] = date('c'); // ISO 8601 format
+        }
+        
+        // Salvar documento no Appwrite
+        $curl = curl_init();
+        
+        if ($isNewVideo) {
+            // Criar novo documento
+            $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents';
+            $method = 'POST';
+        } else {
+            // Atualizar documento existente
+            $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents/' . $id;
+            $method = 'PATCH';
+        }
+        
+        $headers = [
+            'Content-Type: application/json',
+            'X-Appwrite-Project: ' . $appwrite['projectId'],
+            'X-Appwrite-Key: ' . $appwrite['apiKey']
+        ];
+        
+        $postFields = json_encode([
+            'documentId' => $isNewVideo ? $id : null,
+            'data' => $videoData,
+            'permissions' => ['read("any")']
+        ]);
+        
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_POSTFIELDS => $postFields,
+            CURLOPT_HTTPHEADER => $headers
+        ]);
+        
+        $documentResponse = curl_exec($curl);
+        $documentHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $documentError = curl_error($curl);
+        
+        curl_close($curl);
+        
+        if ($documentError) {
+            throw new Exception('cURL Error while saving document: ' . $documentError);
+        }
+        
+        if ($documentHttpCode >= 200 && $documentHttpCode < 300) {
+            $documentData = json_decode($documentResponse, true);
+            
+            $response = [
+                'success' => true,
+                'message' => $isNewVideo ? 'Video created successfully' : 'Video updated successfully',
+                'video' => $documentData
+            ];
+        } else {
+            $errorData = json_decode($documentResponse, true);
+            $errorMessage = isset($errorData['message']) ? $errorData['message'] : 'Unknown error';
+            throw new Exception('API Error while saving document: ' . $errorMessage . ' (Code: ' . $documentHttpCode . ')');
+        }
+        
     } catch (Exception $e) {
+        $response = [
+            'success' => false,
+            'message' => $e->getMessage()
+        ];
         error_log("Error: " . $e->getMessage());
-        $response = ['success' => false, 'message' => $e->getMessage()];
     }
+    
+    echo json_encode($response);
+    exit;
 }
 
+// Método não suportado
+$response = [
+    'success' => false,
+    'message' => 'Unsupported request method'
+];
 echo json_encode($response);
 ?> 
