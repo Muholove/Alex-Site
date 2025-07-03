@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive VIP Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            text-align: center;
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #d9534f;
+        }
+        .timer {
+            font-size: 14px;
+            font-weight: bold;
+            color: rgb(233, 9, 9);
+            background-color: rgb(29, 28, 28);
+            margin-bottom: 20px;
+            padding: 10px;
+            text-align: center;
+        }
+        .headline {
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .plans {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 93%;
+        }
+        .plan {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        @media (min-width: 768px) {
+            .container {
+                max-width: 800px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .timer {
+                font-size: 22px;
+            }
+            .headline {
+                font-size: 18px;
+            }
+            .plans {
+                flex-direction: row;
+                justify-content: space-around;
+                gap: 20px;
+            }
+            .plan {
+                width: 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer">⚠️THE SITE WILL GO DOWN IN <span id="countdown"></span></div>
+
+    <div class="container">
+        <div class="headline">This is your chance to unlock access exclusive leaked content at unbeatable prices. Be quick, offer expires soon!</div>
+        <div class="plans">
+            <div class="plan">
+                <p class="price">$7.99/week</p>
+                <div id="paypal-button-container-P-5H111709KU265180XNAPGUVY"></div>
+            </div>
+            <div class="plan">
+                <p class="price">$14.99/month</p>
+                <div id="paypal-button-container-P-2N121295MF544145HNAPGZNQ"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startCountdown(durationInMinutes) {
+            let timeRemaining = durationInMinutes * 60;
+            function updateTimer() {
+                const minutes = Math.floor(timeRemaining / 60);
+                const seconds = timeRemaining % 60;
+                document.getElementById("countdown").textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    setTimeout(updateTimer, 1000);
+                } else {
+                    document.querySelector(".timer").textContent = "Offer expired!";
+                }
+            }
+            updateTimer();
+        }
+        startCountdown(10);
+    </script>
+
+    <!-- PayPal SDK with new client-id -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AfJfOd9G3pBUpXrsgHRduGo6A0hr2cNtWMrfRuwPTas8x1KtST3NOeZ8Jr48hSh4AOjCOggQE_Y4URiL&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+
+    <!-- New PayPal Button for $7.99 -->
+    <script>
+      paypal.Buttons({
+          style: {
+              shape: 'pill',
+              color: 'silver',
+              layout: 'vertical',
+              label: 'subscribe'
+          },
+          createSubscription: function(data, actions) {
+            return actions.subscription.create({
+              plan_id: 'P-5H111709KU265180XNAPGUVY'
+            });
+          },
+          onApprove: function(data, actions) {
+            window.location.href = "https://vipacess.x10.mx/acess/obg" + data.subscriptionID;
+          }
+      }).render('#paypal-button-container-P-5H111709KU265180XNAPGUVY');
+    </script>
+
+    <!-- New PayPal Button for $14.99 -->
+    <script>
+      paypal.Buttons({
+          style: {
+              shape: 'pill',
+              color: 'silver',
+              layout: 'vertical',
+              label: 'subscribe'
+          },
+          createSubscription: function(data, actions) {
+            return actions.subscription.create({
+              plan_id: 'P-2N121295MF544145HNAPGZNQ'
+            });
+          },
+          onApprove: function(data, actions) {
+            window.location.href = "https://vipacess.site/obg.html/&subscriptionID=" + data.subscriptionID;
+          }
+      }).render('#paypal-button-container-P-2N121295MF544145HNAPGZNQ');
+    </script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Freakleaks</title>
+  <script src="config-loader.js"></script>
+  <script src="appwrite-integration.js"></script>
+  <style>
+    body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #111;
+    color: #ffffff;
+    margin: 0px;
+    padding: 0px;
+  }
+
+  header {
+    background-color: #1F1F1F;
+    padding-top: 0px;
+    padding-left: 30px;
+    height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px 0px 1px;
+    margin-bottom: 30px;
+
+}
+
+header h2 {
+    color: red;
+    font-weight: 600;
+    font-size: 20px;
+}
+
+header h3 {
+    color: rgb(255, 255, 255);
+    text-align: right;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
+    padding-right: 30px;
+    font-size: 16px;
+}
+
+.icon-lupa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #1F1F1F;
+    border: 1px solid #ffffff7a;
+    border-radius: 8px;
+    padding: 10px 15px; 
+    width: 100%;
+    max-width: 300px;
+    margin: 20px auto;
+     
+  }
+
+  .icon-lupa:hover {
+    border: 2px solid rgba(255, 0, 0, 0.877);
+    border-radius: 8px;
+  }
+  
+  .icon-lupa .lupa-icon {
+    font-size: 21px;
+    color: #888;
+  }
+
+  #searchInput {
+    color: white;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    width: 100%;
+    max-width: 400px;
+    background: transparent;
+  }
+
+  .filter-sort {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    gap: 10px;
+    font-size: 20px;
+    padding-right: 15px;
+  }
+
+  .filter-buttons button {
+    background: #222;
+    color: rgb(255, 255, 255);
+    border: none;
+    margin-right: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+
+  .filter-buttons button:hover {
+    background-color: #88888846;
+    border-radius: 6px;
+  }
+
+  .filter-buttons {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    border-radius: 8px;
+    background-color: #1e1e1e;
+    order: 1;
+  }
+
+  @media (max-width: 850px) {
+    .filter-sort {
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+    }
+
+    .filter-buttons {
+      justify-content: center;
+      margin: 0 auto;
+    }
+  }
+
+  .filter-buttons button.active {
+    background: red;
+    box-shadow: 0px 1px 3px black;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .card {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .card:hover {
+    transform: scale(1.03);
+  }
+
+  .card img {
+    width: 100%;
+    height: auto;
+    border-radius: 0px 0px 5px 5px;
+    display: block;
+    transition: transform 0.2s ease;
+  }
+
+  .card img:hover {
+    transform: scale(1.03);
+  }
+
+  .img-container {
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    position: relative;
+    background-color: #222;
+    overflow: hidden;
+  }
+
+  .img-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .info {
+    margin-top: 10px;
+  }
+
+  .info h2 {
+    font-size: 14px;
+    margin: 8px 0 4px;
+  }
+
+  .info p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    
+  }
+
+  .inf {
+    color: rgb(255, 0, 0);
+    font-size: large;
+    padding-right: 10px;
+  }
+
+  .linha {
+    display: flex;
+    justify-content: space-between; /* empurra um para cada lado */
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  #noResults {
+    display: none;
+    text-align: center;
+    margin-top: 40px;
+    font-size: 18px;
+    color: red;
+  }
+
+  .pagination {
+    margin-top: 20px;
+    text-align: center;
+    padding-bottom: 15px;
+  }
+
+  .pagination button {
+    margin: 0 5px;
+    padding: 6px 12px;
+    background-color: #444;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .pagination button.active {
+    background-color: red;
+  }
+
+  .page-info {
+    margin-top: 15px;
+    font-weight: bold;
+    padding-left: 15px;
+  }
+  </style>
+</head>
+<body>
+
+  <div class="cabe">
+    <header>
+        <h2>Freakleaks</h2>
+    </header>
+  </div>
+
+  <div class="icon-lupa">
+  <span class="lupa-icon">⌕</span>
+  <input type="text" id="searchInput" placeholder="Search videos..." />
+  </div>
+
+  <div class="filter-sort">
+    <div class="filter-buttons">
+      <button data-sort="recent" class="active">Recent</button>
+      <button data-sort="views">Views</button>
+      <button data-sort="priceHigh">Price High</button>
+      <button data-sort="priceLow">Price Low</button>
+    </div>
+    <div class="page-info" id="pageInfo"></div> 
+  </div>
+
+  <div class="cards" id="cardsContainer"></div>
+  <p id="noResults">❌ No content found with this name.</p>
+
+  <div class="pagination" id="pagination"></div>
+
+  <div style="text-align: center; margin: 30px 0; background-color: #1e1e1e; padding: 20px; border-radius: 10px; max-width: 600px; margin-left: auto; margin-right: auto;">
+    <h3 style="color: #ffffff; margin-bottom: 15px; font-size: 18px;">For all VIP content access, please contact our support team</h3>
+    <p style="color: #cccccc; margin-bottom: 20px; font-size: 14px;">Get exclusive access to premium content not available on the website</p>
+    <a id="telegram-support-link" href="https://t.me/SUPORT_FOLDER" style="display: flex; align-items: center; justify-content: center; gap: 10px; background-color: #0088cc; color: white; text-decoration: none; font-size: 16px; padding: 12px 24px; border-radius: 8px; font-weight: bold; max-width: 300px; margin: 0 auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.3s ease;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.29-.49.8-.75 3.12-1.36 5.2-2.26 6.24-2.7 2.97-1.24 3.58-1.45 3.98-1.45.09 0 .28.02.4.12.11.08.14.19.16.27.02.07.02.24-.01.38z"/>
+      </svg>
+      Contact Support on Telegram
+    </a>
+  </div>
+
+  <script>
+    // Carregar vídeos do arquivo JSON
+    let cardsData = [];
+    let siteConfig = {};
+    
+    // Function to load site configuration
+    function loadSiteConfig() {
+      return fetch('save_config.php')
+        .then(response => response.json())
+        .then(config => {
+          siteConfig = config;
+          
+          // Update Telegram link if configured
+          if (config.telegramLink) {
+            const telegramLink = document.getElementById('telegram-support-link');
+            telegramLink.href = config.telegramLink;
+          }
+          
+          // Update document title if site title is configured
+          if (config.siteTitle) {
+            document.title = config.siteTitle;
+          }
+          
+          return config;
+        })
+        .catch(error => {
+          console.error('Error loading site configuration:', error);
+        });
+    }
+    
+    // Função para carregar os vídeos do Appwrite
+    function loadVideosFromJSON() {
+      // Use the API to load videos
+      fetch('get_videos.php')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to load videos');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to load videos');
+          }
+          
+          if (!Array.isArray(data.videos)) {
+            throw new Error('Invalid data format');
+          }
+          
+          // Map the Appwrite videos to our frontend format
+          cardsData = data.videos.map(video => ({
+            id: video.id,
+            image: video.image,
+            title: video.title || 'Untitled',
+            duration: video.duration || "00:00",
+            views: video.views || Math.floor(Math.random() * 100000),
+            price: video.price || 0,
+            videoUrl: video.videoUrl || "",
+            created_at: video.created_at
+          }));
+          
+          // Initialize after loading the data
+          filteredCards = [...cardsData];
+          renderCards(sortCards(filteredCards, currentSort));
+        })
+        .catch(error => {
+          console.error('Error loading videos:', error);
+          cardsContainer.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; color: #ff5555; padding: 20px;">
+              Error loading videos: ${error.message}
+              <br>Please try refreshing the page.
+            </div>
+          `;
+        });
+    }
+    
+    // Função para inicializar com dados padrão em caso de erro
+    function initializeWithDefaultData() {
+      cardsData = [];
+      filteredCards = [];
+      renderCards([]);
+    }
+
+    const cardsContainer = document.getElementById("cardsContainer");
+    const searchInput = document.getElementById("searchInput");
+    const noResults = document.getElementById("noResults");
+    const pagination = document.getElementById("pagination");
+    const pageInfo = document.getElementById("pageInfo");
+    const sortButtons = document.querySelectorAll(".filter-buttons button");
+
+    let currentPage = 1;
+    const itemsPerPage = 16;
+    let filteredCards = [];
+    let currentSort = "recent";
+
+    function sortCards(cards, method) {
+      let sorted = [...cards];
+      switch(method) {
+        case "recent":
+          sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+          break;
+        case "views":
+          sorted.sort((a, b) => b.views - a.views);
+          break;
+        case "priceHigh":
+          sorted.sort((a, b) => b.price - a.price);
+          break;
+        case "priceLow":
+          sorted.sort((a, b) => a.price - b.price);
+          break;
+      }
+      return sorted;
+    }
+
+    function renderCards(cards) {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const paginatedCards = cards.slice(start, end);
+
+      if (cards.length === 0) {
+        cardsContainer.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; color: #ff5555; padding: 20px;">
+            No videos found. Please check back later.
+          </div>
+        `;
+        noResults.style.display = "none";
+        pagination.innerHTML = "";
+        pageInfo.textContent = "";
+        return;
+      }
+
+      const html = paginatedCards.map(card => `
+        <div class="card" onclick="window.location.href='preview.html?id=${card.id}'">
+          ${card.image ? 
+            `<img src="${card.image}" alt="${card.title}" 
+                 onerror="this.onerror=null; this.style.display='none'; this.parentNode.style.backgroundColor='#222';">` : 
+            '<div style="width: 100%; padding-top: 56.25%; background-color: #222;"></div>'}
+          <div class="info">
+            <h2>${card.title}</h2>
+            <div class="linha">
+              <p> ⦿ ${card.views.toLocaleString()}</p>
+              <p class="inf"><strong>$${card.price}</strong></p>
+            </div>
+          </div>
+        </div>
+      `).join("");
+      
+      cardsContainer.innerHTML = html;
+      noResults.style.display = "none";
+      pageInfo.textContent = `Page ${currentPage} (${start + 1}–${Math.min(end, cards.length)} of ${cards.length} videos)`;
+      renderPagination(cards.length);
+    }
+
+    function renderPagination(totalItems) {
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      let buttonsHTML = "";
+
+      for (let i = 1; i <= totalPages; i++) {
+        buttonsHTML += `<button class="${i === currentPage ? "active" : ""}" onclick="goToPage(${i})">${i}</button>`;
+      }
+
+      pagination.innerHTML = buttonsHTML;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderCards(filteredCards);
+    }
+
+    searchInput.addEventListener("input", () => {
+      const value = searchInput.value.toLowerCase();
+      filteredCards = cardsData.filter(card =>
+        card.title.toLowerCase().includes(value)
+      );
+      currentPage = 1;
+      renderCards(sortCards(filteredCards, currentSort));
+    });
+
+    sortButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        sortButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentSort = btn.dataset.sort;
+        currentPage = 1;
+        renderCards(sortCards(filteredCards, currentSort));
+      });
+    });
+
+    // Adicionar auto-refresh a cada 30 segundos
+    setInterval(loadVideosFromJSON, 30000);
+
+    // Carregar vídeos ao inicializar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      // First load site configuration
+      loadSiteConfig().then(() => {
+        // Then load videos
+        loadVideosFromJSON();
+      });
+    });
+  </script>
+
+</body>
+</html>

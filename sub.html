@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .headline {
+            background-color: red;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            text-align: center;
+        }
+        .content {
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .content p {
+            font-size: 14px;
+        }
+        .unlock-notification {
+            position: fixed;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
+            opacity: 0;
+            transition: bottom 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+        .checkmark {
+            color: green;
+            margin-right: 5px;
+        }
+        .price {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="headline">
+        ATTENTION: This Presentation will be available until <span id="date"></span>
+    </div>
+
+    <div class="content">
+        <h2><strong>Acess Exclusive Content</strong></h2>
+        <p>Subscribe for only <strong class="price">$7.99/week</strong> to unlock rare premium content.</p>
+    </div>
+    <div>
+        <div id="vid_681e65852ae142bd0d260de6" style="position: relative; width: 100%; padding: 55.00000000000001% 0 0;"> <img id="thumb_681e65852ae142bd0d260de6" src="https://images.converteai.net/26a671cb-e5ce-4ba8-92b7-7aa1ff0ad5c0/players/681e65852ae142bd0d260de6/thumbnail.jpg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: block;" alt="thumbnail"> <div id="backdrop_681e65852ae142bd0d260de6" style=" -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); position: absolute; top: 0; height: 100%; width: 100%; "></div> </div> 
+        
+        <script type="text/javascript" id="scr_681e65852ae142bd0d260de6"> var s=document.createElement("script"); s.src="https://scripts.converteai.net/26a671cb-e5ce-4ba8-92b7-7aa1ff0ad5c0/players/681e65852ae142bd0d260de6/player.js", s.async=!0,document.head.appendChild(s); </script>
+    </div>
+    <script>
+        // Obtém a data atual e formata
+        const today = new Date();
+        const formattedDate = today.toLocaleDateString('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric'
+        });
+        document.getElementById("date").textContent = formattedDate;
+
+        // Lógica de notificações
+        const names = ["Matthew Anderson", "James Walker", "Daniel Johnson", "William Smith", "Robert Brown", "David Miller", "Joseph Wilson", "Charles Moore"];
+
+        function maskName(name) {
+            const parts = name.split(" ");
+            const first = parts[0].slice(0, 3) + "***" + parts[0].slice(-1);
+            const last = parts[1][0] + "****" + parts[1].slice(-1);
+            return `${first} ${last}`;
+        }
+
+        function showUnlockNotification() {
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const maskedName = maskName(randomName);
+            
+            const notification = document.createElement("div");
+            notification.className = "unlock-notification";
+            notification.innerHTML = `
+                <span class="checkmark">✅</span>
+                <strong>${maskedName}</strong> unlocked rare content!
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.bottom = "20px";
+                notification.style.opacity = "1";
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.opacity = "0";
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+
+        setInterval(showUnlockNotification, 5000);
+    </script>
+
+</body>
+</html>

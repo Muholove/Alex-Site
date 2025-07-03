@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="shortcut icon" href="fav.png" type="image/png">
+  <script src="config-loader.js"></script>
+  <title>Preview to Buy</title>
+  <!-- PayPal script will be loaded dynamically with the configured client ID -->
+       /* --- reset / base --- */
+   * { box-sizing: border-box; margin: 0; padding: 0; }
+   body {
+     font-family: Arial, sans-serif;
+     background: #111;
+     color: #fff;
+     line-height: 1.4;
+   }
+   a { color: inherit; text-decoration: none; }
+
+   /* --- header (igual à primeira parte) --- */
+   header {
+     background: #1F1F1F;
+     height: 70px;
+     display: flex;
+     align-items: center;
+     padding: 0 30px;
+     box-shadow: 0px 0px 1px rgb(255, 255, 255);
+   }
+   header h2 { 
+    color: red; font-weight: 600; 
+    font-size: 20px;
+   }
+
+   /* --- container principal: duas colunas --- */
+   .preview-container {
+     display: grid;
+     grid-template-columns: 3fr 1fr;
+     gap: 20px;
+     padding: 13px;
+   }
+
+   .fundo-di {
+      background-color: #333333;
+      padding: 5px;
+      border-radius: 10px;
+      transition: transform 0.2s ease;
+   }
+
+   .fundo-di:hover {
+    transform: scale(1.01);
+  }
+   /* --- vídeo e informações principais (esquerda) --- */
+   .main-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 = 9/16 = 0.5625 */
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* ou 'contain' se quiser ver o vídeo inteiro com bordas pretas */
+  }
+  
+   .video-info {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+   }
+   .video-info h1 {
+     font-size: 15px;
+     color: #ffffff;
+     padding: 10px;
+   }
+   .video-info .price {
+     font-size: 19px;
+     font-weight: bold;
+     color: #ff2600;
+     padding-right: 10px;
+   }
+   .video-info .views {
+     font-size: 14px;
+     color: #ccc;
+     margin-left: 10px;
+     padding-bottom: 10px;
+   }
+
+   .purchase {
+    background-color: #3D3D3D;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    padding-left: 15px;
+    padding-top: 10px;
+    border-radius: 5px 5px 0px 0px;
+  }
+
+   /* --- opções de compra --- */
+   .purchase-options {
+     display: flex;
+     gap: 10px;
+     background-color: #3d3d3d;
+     padding: 15px;
+     margin-top: 0px;
+   }
+  
+   .option {
+     flex: 1;
+     background: #4C4C4C;
+     padding: 16px;
+     border-radius: 6px;
+     text-align: center;
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     box-shadow: 0 0px 1px rgba(255, 255, 255, 0.301);
+   }
+
+   .option h3 {
+    color: rgb(255, 0, 0);
+    text-align: left;
+    font-size: 16px;
+    padding-bottom: 10px;
+    padding-top: 5px;
+  }
+
+  .option h2 {
+    color: rgb(255, 0, 0);
+    text-align: left;
+    font-size: 16px;
+    padding-bottom: 10px;
+    padding-top: 5px;
+  }
+
+   .option p {
+     font-size: 11px;
+     color: #CACACA;
+   }
+
+   .option h5 {
+    color: #000;
+    font-size: small;
+  }
+  .option h6 {
+    background-color: #313131bd;
+    margin-top: 10px;
+    padding: 5px;
+    border-radius: 3px;
+    color: #CACACA;
+  }
+   .option button {
+     padding: 15px;
+     border: none;
+     border-radius: 6px;
+     cursor: pointer;
+     font-size: 16px;
+  }
+
+   .option.telegram button {
+     background: #37ABE1;
+     font-size: larger;
+     color: white;
+     box-shadow: 0 0.60px 1.30px #111;
+     transition: transform 0.2s ease;
+   }
+
+   .option.telegram p {
+      margin-top: -10px;
+  }
+
+   .option.telegram button:hover {
+     transform: scale(1.01);
+  }
+
+   /* --- descrição --- */
+   .description {
+     background: #1e1e1e;
+     margin-top: 30px;
+     padding: 16px;
+     border-radius: 6px;
+     font-size: 14px;
+     color: #ccc;
+   }
+
+   /* --- sugestões (direita) --- */
+   .suggestions {
+     display: flex;
+     flex-direction: column;
+     gap: 16px;
+   }
+   .suggestions h2 {
+     margin-bottom: 8px;
+     font-size: 20px;
+     color: white;
+   }
+
+   .suggestion-card {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .suggestion-card:hover {
+    transform: scale(1.03);
+  }
+
+   .suggestion-card img {
+     width: 100%;
+     height: auto;
+     object-fit: cover;
+   }
+   .suggestion-info {
+     padding: 8px;
+     flex: 1;
+     display: flex;
+     flex-direction: column;
+     justify-content: space-between;
+   }
+   .suggestion-info h3 {
+     font-size: 16px;
+     color: #fff;
+   }
+   .suggestion-info .meta {
+     font-size: 12px;
+     color: #ccc;
+     margin-top: 10px;
+   }
+   .suggestion-info .price {
+     font-size: 16px;
+     font-weight: bold;
+     color: #ff2600;
+     text-align: right;
+   }
+
+   /* --- responsividade --- */
+   @media (max-width: 800px) {
+     .preview-container {
+       grid-template-columns: 1fr;
+     }
+     .purchase-options {
+       flex-direction: column;
+     }
+   }
+
+   .option.paypal button {
+     background: #0070ba;
+     color: white;
+     font-size: larger;
+     box-shadow: 0 0.60px 1.30px #111;
+     transition: transform 0.2s ease;
+   }
+   
+   .option.paypal button:hover {
+     transform: scale(1.01);
+   }
+   
+   .option.paypal p {
+     margin-top: -10px;
+   }
+
+   .option.paypal {
+     background: #4C4C4C;
+   }
+   .option.paypal h2 {
+     color: #0070ba;
+   }
+   #paypal-button-container {
+     width: 100%;
+     margin: 10px 0;
+   }
+   </style>
+</head>
+<body>
+
+  <header>
+    <h2>Freakleaks</h2>
+  </header>
+
+  <div class="preview-container">
+    
+    <!-- ESQUERDA: vídeo, título, compra e descrição -->
+    <div class="main-preview">
+      <div class="fundo-di">
+        <div class="video-wrapper">
+          <video class="video" controls>
+            <source src="imagens/thandy.mp4" type="video/mp4">
+            Seu navegador não suporta vídeo.
+          </video>
+        </div>
+        <div class="video-info">
+          <div>
+            <h1>ASH LEAKS</h1>
+            <div class="views">👁 5783 views</div>
+          </div>
+          <div class="price">$ 25.00</div>
+        </div>
+        <div>
+          <h4 class="purchase">Purchase Options</h4>
+        </div>
+        <div class="purchase-options">
+          <div class="option telegram">
+            <h2>Direct Contact</h2>
+            <p>Negotiate directly with the seller via Telegram</p>
+            <button onclick="window.open('https://t.me/SUPORT_FOLDER', '_blank')">Contact Seller</button>
+            <h6>⛊ All transactions are secure and protected</h6>
+          </div>
+          <div class="option paypal">
+            <h2>PayPal Payment</h2>
+            <p>Pay securely with PayPal</p>
+            <div id="paypal-button-container" style="min-height: 150px;"></div>
+            <h6>⛊ Secure payment through PayPal</h6>
+          </div>
+          <div class="option crypto">
+            <h2>Crypto Payment</h2>
+            <p>Pay with Bitcoin, Ethereum, LTC or Solana</p>
+            <button onclick="showCryptoModal()" style="background: #333; color: #fff; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px;">Crypto Payment</button>
+            <h6>⛊ Fast and global payment</h6>
+          </div>
+        </div>
+        <div class="description">
+          <p>CONTENT AVALAIBLE<br><br>
+
+✅Lizzy and bro<br>
+✅Desiree Garcia <br>
+✅Ivanka and bro<br>
+✅Billie eilish<br>
+✅Sophie rain<br>
+✅Mom and son<br>
+✅Family therapy<br>
+✅Bang bros exclusive <br>
+✅Snap teens<br>
+✅ASH folder<br>
+✅Darkzadie <br>
+✅Teen and dogs<br>
+✅Hight School <br>
+✅Crystal bright<br>
+✅Martina Oliveira <br>
+✅Tameeka<br>
+✅Banana girls <br>
+✅Lily Lanes<br>
+✅Hidden cam<br>
+✅Arabik girls<br>
+✅Emmi sellers <br>
+✅Teanna Trump<br>
+✅Cp incest<br>
+✅Daughter and father<br>
+✅Monkey wins<br>
+✅Streamer Girls<br>
+✅Graciebon<br>
+✅Snap 57<br>
+✅Snap 0862<br>
+✅Mom and son 1.0<br>
+✅Mom and son 2.0<br>
+✅Darkzadie <br>
+✅Teens<br>
+✅Asian folder <br>
+✅Rape<br>
+✅Amelia blonde Teen<br>
+✅Izzy Bm<br>
+✅Hannah<br>
+✅Jameliz folder<br>
+✅Emma<br>
+✅Black cp teens 13-17y<br>
+✅Ruth-lee<br>
+✅Octokuro<br>
+✅Onlyfans rare Girls 2.17TB<br>
+✅Hiddem cam<br>
+✅Ivanka<br>
+✅Anxious Panda<br>
+✅Latina<br>
+✅️Frances bentely<br>
+✅️Bella Ramos<br>
+✅️Megnutt<br>
+✅️Incest, Daughters wap<br>
+✅️Pyt-Latina, USA, Canada<br>
+✅️Abbi<br>
+✅️Hailey Sigmond<br>
+✅️Cp, New cp, indian Cp, Long Cp<br>
+✅New teen 1, 2, 3, 4, 5<br><br>
+
+Contact me now
+        </p>
+      </div>
+      </div>
+    </div>
+
+    <!-- DIREITA: sugestões de vídeos -->
+    <aside class="suggestions" id="suggestions">
+        <h2>Suggested Videos</h2>
+      </aside>      
+
+  </div>
+
+  <script>
+  // Initialize empty cardsData array
+  let cardsData = [];
+  let siteConfig = {};
+  
+  // Function to load site configuration
+  function loadSiteConfig() {
+    return fetch('save_config.php')
+      .then(response => response.json())
+      .then(config => {
+        siteConfig = config;
+        
+        // Update PayPal script with configured client ID if available
+        if (config.paypalClientId) {
+          if (oldScript) {
+            oldScript.remove();
+          }
+          
+          const script = document.createElement('script');
+          document.head.appendChild(script);
+          
+          // Initialize PayPal buttons when script loads
+          script.onload = function() {
+            initPayPalButtons();
+          };
+        }
+        
+        // Update Telegram links if configured
+        if (config.telegramLink) {
+          document.querySelectorAll('a[href*="t.me"], button[onclick*="t.me"]').forEach(el => {
+            if (el.getAttribute('href')) {
+              el.setAttribute('href', config.telegramLink);
+            }
+            if (el.getAttribute('onclick')) {
+              el.setAttribute('onclick', `window.open('${config.telegramLink}', '_blank')`);
+            }
+          });
+        }
+        
+        // Update document title if site title is configured
+        if (config.siteTitle) {
+          document.title = config.siteTitle + ' - Preview';
+          
+          // Update site name in header
+          const header = document.querySelector('header h2');
+          if (header) {
+            header.textContent = config.siteTitle;
+          }
+        }
+        
+        return config;
+      })
+      .catch(error => {
+        console.error('Error loading site configuration:', error);
+      });
+  }
+  
+  // Function to load videos from JSON file
+  function loadVideosFromJSON() {
+    fetch('videos.json')
+      .then(response => response.json())
+      .then(data => {
+        cardsData = data.map(video => ({
+          id: video.id,
+          image: video.image || "imagens/default.svg",
+          title: video.title,
+          duration: video.duration || "00:00",
+          views: video.views || Math.floor(Math.random() * 100000),
+          price: video.price,
+          videoUrl: video.videoUrl || "",
+          videoLink: video.videoLink || ""
+        }));
+        
+        // Initialize page after loading data
+        initializeContent();
+      })
+      .catch(error => {
+        console.error('Error loading videos:', error);
+        alert("Error loading video data. Please try again later.");
+      });
+  }
+
+  // Function to initialize content after data is loaded
+  function initializeContent() {
+const contentId = new URLSearchParams(window.location.search).get('id');
+const content = cardsData.find(item => item.id == contentId);
+
+if (content) {
+      // Update the page
+  document.querySelector('.video-info h1').textContent = content.title;
+  document.querySelector('.price').textContent = `$ ${content.price}.00`;
+  document.querySelector('.views').textContent = `⦿ ${content.views} views`;
+      
+      // Set video source and poster (thumbnail)
+      const videoEl = document.querySelector('video');
+      const videoSource = document.querySelector('video source');
+      
+      // Only set poster if image exists
+      if (content.image) {
+      videoEl.setAttribute('poster', content.image);
+      } else {
+        // Set a black background if no poster
+        videoEl.style.backgroundColor = "#000";
+      }
+      
+      // Only set video source if it exists
+      if (content.videoUrl) {
+        videoSource.src = content.videoUrl;
+      videoEl.load();
+      }
+      
+      // Now that we have data, render suggestions
+      renderSuggestions();
+} else {
+      alert("Content not found! Going back...");
+  window.location.href = "index.html";
+    }
+}
+    
+function renderSuggestions(count = 3) {
+  const container = document.getElementById("suggestions");
+  container.querySelectorAll(".suggestion-card").forEach(e => e.remove());
+  
+  const currentId = new URLSearchParams(window.location.search).get('id');
+  
+  const suggestions = cardsData
+    .filter(item => item.id != currentId)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, count);
+
+  suggestions.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "suggestion-card";
+      
+      // Create HTML with image placeholder
+    card.innerHTML = `
+        <div style="position: relative; width: 100%; padding-top: 56.25%; background-color: #222; overflow: hidden;">
+          ${item.image ? `<img src="${item.image}" alt="${item.title}" 
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
+            onerror="this.onerror=null; this.style.display='none';">` : ''}
+        </div>
+      <div class="suggestion-info">
+        <h3>${item.title}</h3>
+        <div class="price">$ ${item.price}.00</div>
+      </div>`;
+    
+    card.onclick = () => {
+      window.location.href = `preview.html?id=${item.id}`;
+    };
+    
+    container.appendChild(card);
+  });
+}
+
+  // Load videos when page loads
+  document.addEventListener("DOMContentLoaded", function() {
+    // First load site configuration
+    fetch('save_config.php')
+      .then(response => response.json())
+      .then(config => {
+        // Update PayPal script with configured client ID if available
+        if (config.paypalClientId) {
+          if (oldScript) {
+            const newScript = document.createElement('script');
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+          }
+        }
+        
+        // Update Telegram link
+        if (config.telegramLink) {
+          // Update the links in the purchase options
+          const telegramButton = document.querySelector('.option.telegram button');
+          if (telegramButton) {
+            telegramButton.onclick = function() { window.open(config.telegramLink, '_blank'); };
+          }
+        }
+        
+        // Then load videos
+        loadVideosFromJSON();
+      })
+      .catch(error => {
+        console.error('Error loading site configuration:', error);
+        // Load videos anyway if config fails
+        loadVideosFromJSON();
+      });
+  });
+
+// Add PayPal payment function
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof paypal !== 'undefined') {
+    paypal.Buttons({
+      style: {
+        layout: 'vertical',
+        color: 'blue',
+        shape: 'rect',
+        label: 'pay'
+      },
+      createOrder: function(data, actions) {
+          const contentId = new URLSearchParams(window.location.search).get('id');
+          const content = cardsData.find(item => item.id == contentId);
+          
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+                value: content ? content.price : 0
+            }
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+            const contentId = new URLSearchParams(window.location.search).get('id');
+            const content = cardsData.find(item => item.id == contentId);
+            
+          // Create success message container
+          const successDiv = document.createElement('div');
+          successDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            max-width: 450px;
+            width: 90%;
+          `;
+          
+          // Add success message with video link
+          successDiv.innerHTML = `
+            <h2 style="color: #4CAF50; margin-bottom: 20px; font-size: 24px;">Payment Successful! 🎉</h2>
+            <p style="color: #fff; margin-bottom: 20px; line-height: 1.5; font-size: 16px;">
+              Thank you for your purchase! Here is your access link:
+            </p>
+            <div style="background: #333; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              <p style="color: #fff; word-break: break-all; margin-bottom: 15px; font-size: 15px; border-left: 3px solid #4CAF50; padding-left: 10px;">${content.videoLink}</p>
+              <button onclick="navigator.clipboard.writeText('${content.videoLink}');this.innerHTML='✓ Copied!';setTimeout(()=>this.innerHTML='<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'16\\' height=\\'16\\' fill=\\'currentColor\\' viewBox=\\'0 0 16 16\\'><path d=\\'M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z\\'></path><path d=\\'M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z\\'></path></svg> Copy Link',2000)" 
+                      style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"></path>
+                  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"></path>
+                </svg>
+                Copy Link
+              </button>
+            </div>
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 3px solid #ff9800; text-align: left;">
+              <p style="color: #ff9800; font-weight: bold; margin-bottom: 10px;">If the link doesn't work:</p>
+              <ol style="color: #ddd; margin-left: 20px; font-size: 14px; line-height: 1.5;">
+                <li>Save your payment receipt/transaction ID</li>
+                <li>Contact our support team on Telegram</li>
+                <li>Send your payment proof</li>
+                <li>We'll provide immediate assistance</li>
+              </ol>
+            </div>
+            <button onclick="window.open('https://t.me/SUPORT_FOLDER', '_blank')" 
+                    style="background: #0088cc; 
+                           color: white; 
+                           border: none; 
+                           padding: 12px 24px; 
+                           border-radius: 5px; 
+                           cursor: pointer; 
+                           font-size: 16px;
+                           display: flex;
+                           align-items: center;
+                           justify-content: center;
+                           width: 100%;
+                           gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.29-.49.8-.75 3.12-1.36 5.2-2.26 6.24-2.7 2.97-1.24 3.58-1.45 3.98-1.45.09 0 .28.02.4.12.11.08.14.19.16.27.02.07.02.24-.01.38z"/>
+              </svg>
+              Contact Support on Telegram
+            </button>
+          `;
+          
+          // Add overlay
+          const overlay = document.createElement('div');
+          overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            backdrop-filter: blur(3px);
+          `;
+          
+          // Add close button
+          const closeButton = document.createElement('button');
+          closeButton.innerHTML = '×';
+          closeButton.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+          `;
+          closeButton.onclick = function() {
+            document.body.removeChild(overlay);
+            document.body.removeChild(successDiv);
+          };
+          
+          successDiv.appendChild(closeButton);
+          document.body.appendChild(overlay);
+          document.body.appendChild(successDiv);
+        });
+      }
+    }).render('#paypal-button-container');
+  } else {
+    console.error('PayPal SDK not loaded');
+  }
+});
+
+function showCryptoModal() {
+  const addresses = [
+    { name: 'BTC', address: '1BeWwbMcu77FKmm8XdwSAyEadZeGfJYKdU' },
+    { name: 'ETH', address: '0x67e94ed075e8779e60647b91d129c5a84b504134' },
+    { name: 'LTC', address: 'LPfubcGKtg9eJKpV5M64RGb6MyJfDqRgSk' },
+    { name: 'Solana', address: '5RQWWMd3brujYDWok1ptGUx9SStt32iCpahzafzSS4k5' },
+    { name: 'USDT TRC20', address: 'TCJFoHxk4N2k93tobLcai7SE62kjZ1vPbE' }
+  ];
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e1e1e;
+    padding: 30px 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1001;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    max-width: 450px;
+    width: 90%;
+  `;
+    
+    const contentId = new URLSearchParams(window.location.search).get('id');
+    const content = cardsData.find(item => item.id == contentId);
+    const price = content ? content.price : 0;
+    
+  let html = `
+    <h2 style="color:#FFD700; margin-bottom:15px; font-size:24px;">Crypto Payment</h2>
+    <p style="color:#fff; margin-bottom:15px;">Pay the amount of <b style="font-size:18px; color:#FFD700">$${price}</b> to one of the addresses below:</p>
+  `;
+    
+  addresses.forEach(item => {
+    html += `
+      <div style="display:flex; align-items:center; justify-content:space-between; background:#222; padding:10px; margin-bottom:10px; border-radius:5px;">
+        <span style="color:#FFD700; font-weight:bold; min-width:80px; text-align:left;">${item.name}</span>
+        <span style="color:#fff; font-size:12px; word-break:break-all; margin:0 8px; flex:1; text-align:left;">${item.address}</span>
+        <button onclick="navigator.clipboard.writeText('${item.address}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy',1000);" 
+                style="background:#444; color:#fff; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-size:12px;">
+          Copy
+        </button>
+      </div>
+    `;
+  });
+    
+  html += `
+    <div style="background:#2a2a2a; padding:15px; border-radius:5px; margin:20px 0; border-left:3px solid #FFD700; text-align:left;">
+      <p style="color:#FFD700; font-weight:bold; margin-bottom:10px;">After Payment:</p>
+      <ol style="color:#ddd; margin-left:20px; font-size:14px; line-height:1.5;">
+        <li>Save a screenshot of your transaction</li>
+        <li>Contact our support team on Telegram</li>
+        <li>Send your payment proof</li>
+        <li>You'll receive access to your content immediately</li>
+      </ol>
+    </div>
+    
+    <button onclick="window.open('https://t.me/SUPORT_FOLDER', '_blank')" 
+            style="background:#0088cc; color:white; border:none; padding:12px 24px; border-radius:5px; cursor:pointer; font-size:16px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.29-.49.8-.75 3.12-1.36 5.2-2.26 6.24-2.7 2.97-1.24 3.58-1.45 3.98-1.45.09 0 .28.02.4.12.11.08.14.19.16.27.02.07.02.24-.01.38z"/>
+      </svg>
+      Contact Support on Telegram
+    </button>
+  `;
+    
+  modal.innerHTML = html;
+    
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    backdrop-filter: blur(3px);
+  `;
+    
+  // Close button
+  const closeButton = document.createElement('button');
+  closeButton.innerHTML = '×';
+  closeButton.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+  `;
+    
+  closeButton.onclick = function() {
+    document.body.removeChild(overlay);
+    document.body.removeChild(modal);
+  };
+    
+  modal.appendChild(closeButton);
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+}
+  </script>
+
+</body>
+</html>
