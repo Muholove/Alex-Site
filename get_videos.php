@@ -13,7 +13,19 @@ try {
     // Set up cURL to fetch from Appwrite API
     $curl = curl_init();
     
-    $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents?queries[]=is_active=true';
+    // Fix the query syntax - correct format for Appwrite queries
+    $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents';
+    
+    // Build proper query - Appwrite expects JSON format in query parameter
+    $queryJson = json_encode([
+        "method" => "equal",
+        "attribute" => "is_active",
+        "values" => [true]
+    ]);
+    
+    // Properly encode query for URL
+    $url .= '?queries[]=' . urlencode($queryJson);
+    
     $debug_info['request_url'] = $url;
     
     $headers = [
