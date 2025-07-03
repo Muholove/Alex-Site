@@ -1,0 +1,18 @@
+# Arquivos de backup
+backup_*
+*.bak
+
+# Arquivos sensíveis
+.git
+.env
+.gitignore
+
+# Diretórios não necessários para produção
+.github
+.vscode
+videos
+imagens
+
+# Arquivos locais de desenvolvimento
+*.log
+README.md 
