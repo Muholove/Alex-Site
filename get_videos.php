@@ -2,6 +2,10 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
+// Debug mode
+$debug = true;
+$debug_info = [];
+
 // Appwrite configuration
 $appwrite = [
     'projectId' => '6852ab51002ca9bf6bd4',
@@ -13,23 +17,44 @@ $appwrite = [
     'endpoint' => 'https://cloud.appwrite.io/v1'
 ];
 
+// Use environment variables if available
+if(getenv('APPWRITE_ENDPOINT')) {
+    $appwrite['endpoint'] = getenv('APPWRITE_ENDPOINT');
+    $debug_info['endpoint_source'] = 'env';
+}
+if(getenv('APPWRITE_PROJECT_ID')) {
+    $appwrite['projectId'] = getenv('APPWRITE_PROJECT_ID');
+    $debug_info['project_id_source'] = 'env';
+}
+if(getenv('APPWRITE_API_KEY')) {
+    $appwrite['apiKey'] = getenv('APPWRITE_API_KEY');
+    $debug_info['api_key_source'] = 'env';
+}
+
 try {
     // Set up cURL to fetch from Appwrite API
     $curl = curl_init();
     
     $url = $appwrite['endpoint'] . '/databases/' . $appwrite['databaseId'] . '/collections/' . $appwrite['videoCollectionId'] . '/documents?queries[]=is_active=true';
+    $debug_info['request_url'] = $url;
+    
+    $headers = [
+        'Content-Type: application/json',
+        'X-Appwrite-Project: ' . $appwrite['projectId'],
+        'X-Appwrite-Key: ' . $appwrite['apiKey']
+    ];
+    $debug_info['request_headers'] = $headers;
     
     curl_setopt_array($curl, [
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'X-Appwrite-Project: ' . $appwrite['projectId'],
-            'X-Appwrite-Key: ' . $appwrite['apiKey']
-        ]
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_VERBOSE => $debug,
+        CURLINFO_HEADER_OUT => true
     ]);
     
     $response = curl_exec($curl);
+    $debug_info['curl_info'] = curl_getinfo($curl);
     $err = curl_error($curl);
     
     curl_close($curl);
@@ -38,13 +63,30 @@ try {
         throw new Exception('cURL Error: ' . $err);
     }
     
+    // Log the raw response for debugging
+    if($debug) {
+        $debug_info['raw_response'] = $response;
+    }
+    
     $result = json_decode($response, true);
     
-    if (!isset($result['documents'])) {
-        throw new Exception('Invalid response from Appwrite API');
+    if ($result === null) {
+        $debug_info['json_error'] = json_last_error_msg();
+        throw new Exception('Invalid JSON response from Appwrite API: ' . json_last_error_msg());
+    }
+    
+    if (!isset($result['documents']) && !isset($result['message'])) {
+        $debug_info['response_structure'] = array_keys($result);
+        throw new Exception('Invalid response structure from Appwrite API');
+    }
+    
+    // Check if there's an error message in the response
+    if (isset($result['message'])) {
+        throw new Exception('Appwrite API Error: ' . $result['message'] . (isset($result['code']) ? ' (Code: ' . $result['code'] . ')' : ''));
     }
     
     $videos = $result['documents'];
+    $debug_info['video_count'] = count($videos);
     
     // Format videos for frontend compatibility
     $formattedVideos = [];
@@ -79,15 +121,29 @@ try {
         return strtotime($b['created_at']) - strtotime($a['created_at']);
     });
     
-    echo json_encode([
+    $response_data = [
         'success' => true,
         'videos' => $formattedVideos
-    ]);
+    ];
+    
+    // Add debug info if enabled
+    if ($debug) {
+        $response_data['debug_info'] = $debug_info;
+    }
+    
+    echo json_encode($response_data);
     
 } catch (Exception $e) {
-    echo json_encode([
+    $error_response = [
         'success' => false,
         'message' => 'Error loading videos: ' . $e->getMessage()
-    ]);
+    ];
+    
+    // Add debug info if enabled
+    if ($debug) {
+        $error_response['debug_info'] = $debug_info;
+    }
+    
+    echo json_encode($error_response);
 }
 ?> 
