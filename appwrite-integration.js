@@ -21,7 +21,19 @@ const AppwriteIntegration = {
      * @returns {Object} The AppwriteIntegration object for chaining
      */
     init(config = {}) {
+        // First apply any passed config
         this.config = { ...this.config, ...config };
+        
+        // Then check if window.siteConfig exists and has appwrite settings
+        if (window.siteConfig && window.siteConfig.appwrite) {
+            this.config = { ...this.config, ...window.siteConfig.appwrite };
+            
+            // Check if debug mode is set in site config
+            if (typeof window.siteConfig.debug !== 'undefined') {
+                this.debug = window.siteConfig.debug;
+            }
+        }
+        
         if (this.debug) {
             console.log('AppwriteIntegration initialized with config:', this.config);
         }

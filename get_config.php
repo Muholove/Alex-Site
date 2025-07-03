@@ -12,12 +12,30 @@ if (file_exists($configFile)) {
     if (isset($config['adminPassword'])) {
         unset($config['adminPassword']);
     }
+    
+    // Ensure Appwrite client-side config is available
+    if (isset($config['appwrite'])) {
+        // Remove API key for security - it should only be used server-side
+        if (isset($config['appwrite']['apiKey'])) {
+            unset($config['appwrite']['apiKey']);
+        }
+    }
 } else {
+    // Default configuration
     $config = [
-        'siteTitle' => 'FreakLeaks',
-        'telegramLink' => 'https://t.me/SUPORT_FOLDER',
-        'paypalClientId' => 'AfE6gBNBJPKNWhjKno-7NrJZIQfVRve4G376qg1yhfFsACrKoKvuf9waJnUg0ewTMcAiY5BQTCrr8NNN',
-        'telegramUsername' => ''
+        'siteTitle' => 'ADULTFLIX',
+        'telegramLink' => 'https://t.me/your_telegram_contact',
+        'paypalClientId' => 'AUt9AbUUPcy16ZYJenWPNfQHdWvMkDnqFWDXo3UgVPx14hBl9qFSGo9AzN9Z3CUzZ-mftWxyoKpsvYTN',
+        'telegramUsername' => '',
+        'appwrite' => [
+            'endpoint' => 'https://cloud.appwrite.io/v1',
+            'projectId' => '6852ab51002ca9bf6bd4',
+            'databaseId' => '681f818100229727cfc0',
+            'videoCollectionId' => '681f81a4001d1281896e',
+            'thumbnailBucketId' => '681f82280005e6182fdd',
+            'videoBucketId' => '681f820d00319f2aa58b'
+        ],
+        'debug' => true
     ];
 }
 

@@ -2,16 +2,8 @@
 // Enable error logging
 error_log("get_video.php accessed with path: " . ($_GET['path'] ?? 'none') . ", id: " . ($_GET['id'] ?? 'none'));
 
-// Appwrite configuration
-$appwrite = [
-    'projectId' => '6852ab51002ca9bf6bd4',
-    'databaseId' => '681f818100229727cfc0',
-    'videoCollectionId' => '681f81a4001d1281896e',
-    'thumbnailBucketId' => '681f82280005e6182fdd',
-    'videoBucketId' => '681f820d00319f2aa58b',
-    'apiKey' => 'standard_f291de00b8dc2241d3248c9786faa23a9e22f81d3ad95842dc9d955f42464bc179f70721cd83c483dcd5b2d596f529f4a77d67afb37f80040941bb7235a4a5f6e16ad4df4ba8299352e8ec59344efbd8a59da626fd684db28ec14221428d21c57c566b52ad84c6dde8055f3c189e93d347200a4778a065dae271c14c4105db0e',
-    'endpoint' => 'https://cloud.appwrite.io/v1'
-];
+// Load configuration from config.php
+$appwrite = require 'config.php';
 
 // If an ID is provided, fetch the video from Appwrite
 if (isset($_GET['id'])) {
